@@ -36,6 +36,10 @@ $ npm run m2
 
 ```bash
 #operation: "plus" | "munis" | "div" | "mult"
+# for 1 request
 curl -X POST -d '{"operation": "plus","numbers": [1,2]}' -H "Content-Type: application/json" http://localhost:3001/runTask
+
+#for a lot of requests
+autocannon  -c 500 -d 10 -m POST -H Content-Type=application/json -b "{\"operation\": \"plus\", \"numbers\": [1,4]}" http://localhost:3001/runTask
 ```
 

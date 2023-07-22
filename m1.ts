@@ -2,7 +2,8 @@ import bodyParser from 'body-parser'
 import { Channel, connect } from 'amqplib'
 import express, { Response } from 'express'
 import { v4 as uuidv4 } from 'uuid'
-
+import { appendFile } from 'fs/promises'
+import { join } from 'path'
 const PORT = 3001
 const RABBITMQ_URL = 'amqp://localhost'
 const EXCHANGE_NAME = 'taskExchange'
@@ -10,7 +11,9 @@ const QUEUE_NAME = 'taskQueue'
 const OPERATIONS = ['plus', 'munis', 'div', 'mult']
 
 let channel: Channel, connection
-const app = express()
+const app = express();
+
+
 app.use(bodyParser.json())
 
 async function createRMQConnection() {
@@ -26,6 +29,7 @@ async function createRMQConnection() {
 	await createRMQConnection()
 
 	app.post('/runTask', async (req, res: Response) => {
+		
 		try {
 			const operation = req.body.operation
 			const { numbers } = req.body
@@ -39,8 +43,9 @@ async function createRMQConnection() {
 				res.status(400).json({ error: 'Invalid input' })
 				return
 			}
-
-			const correlationId = uuidv4()
+			
+			const correlationId = uuidv4();
+			let logStr = `[${new Date().toLocaleTimeString()}] Request: ${JSON.stringify({ operation, numbers, correlationId })}\n`;
 			const requestTask = new Promise(async (resolve) => {
 				const { queue: replyTo } = await channel.assertQueue('', { exclusive: true })
 				const { consumerTag } = await channel.consume(
@@ -48,7 +53,9 @@ async function createRMQConnection() {
 					(message) => {
 						if (!message) console.warn('Consumer cancelled')
 						else if (message.properties.correlationId === correlationId) {
-							channel.cancel(consumerTag)
+							channel.cancel(consumerTag);
+							logStr += `[${new Date().toLocaleTimeString()}] Response: ${JSON.stringify({ result: message.content.toString(), correlationId })}\n`;
+							appendFile('./logs.txt', logStr);
 							resolve(message.content.toString())
 						}
 					},
