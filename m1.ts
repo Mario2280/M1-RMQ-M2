@@ -22,8 +22,7 @@ async function createRMQConnection() {
 		console.error(e)
 	}
 }
-
-;(async () => {
+(async () => {
 	await createRMQConnection()
 
 	app.post('/runTask', async (req, res: Response) => {
