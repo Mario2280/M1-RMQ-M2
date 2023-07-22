@@ -5,7 +5,7 @@
 
 - Docker
 - Docker Compose
-- Curl
+- Curl, Autocannon (Optionally, For Tests)
 - Typescript
 
 ## Ports
